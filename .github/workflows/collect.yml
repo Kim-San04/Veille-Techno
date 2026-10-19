@@ -2,7 +2,7 @@ name: collect
 
 on:
   schedule:
-    - cron: "17 */6 * * *"   # every 6 hours
+    - cron: "43 */3 * * *"   # every 3 hours, off-peak minute (GitHub delays or drops runs scheduled at busy times)
   workflow_dispatch: {}       # manual run from the Actions tab
 
 permissions:
