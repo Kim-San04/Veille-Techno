@@ -3,7 +3,13 @@ name = "veille"
 version = "0.1.0"
 description = "Automated monitoring of security risks of agentic AI coding assistants and the MCP ecosystem"
 requires-python = ">=3.11"
-dependencies = ["feedparser>=6.0", "requests>=2.31", "pyyaml>=6.0"]
+dependencies = [
+    "feedparser>=6.0",
+    "requests>=2.31",
+    "pyyaml>=6.0",
+    "anthropic>=1.15.0",
+    "trafilatura>=2.3.1",
+]
 
 [project.scripts]
 veille = "veille.cli:main"

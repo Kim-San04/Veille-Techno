@@ -107,6 +107,11 @@ def cmd_export(_):
     JSONL.parent.mkdir(parents=True, exist_ok=True)
     JSONL.write_text("".join(json.dumps(dict(r), ensure_ascii=False, sort_keys=True) + "\n" for r in rows))
     print(f"exported {len(rows)} articles -> {JSONL.name}")
+    for name, query in (("sheets", "SELECT * FROM sheets ORDER BY url"), ("prompt_log", "SELECT * FROM prompt_log ORDER BY id")):
+        rs = [dict(r) for r in con.execute(query)]
+        if rs:
+            (JSONL.parent / f"{name}.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in rs))
+            print(f"exported {len(rs)} rows -> {name}.jsonl")
 
 
 def cmd_import(_):
@@ -121,8 +126,87 @@ def cmd_import(_):
         cur = con.execute(f"INSERT OR IGNORE INTO articles({','.join(COLS)}) VALUES({','.join('?' * len(COLS))})",
                           [d.get(c) for c in COLS])
         n += cur.rowcount
+    for name in ("sheets", "prompt_log"):
+        f = JSONL.parent / f"{name}.jsonl"
+        if f.exists():
+            for line in f.read_text().splitlines():
+                d = json.loads(line)
+                d.pop("id", None)
+                con.execute(f"INSERT OR IGNORE INTO {name}({','.join(d)}) VALUES({','.join('?' * len(d))})", list(d.values()))
     con.commit()
     print(f"imported {n} articles")
+
+
+def cmd_sheet(args):
+    """Draft source sheets for the best unreviewed articles (costs API credits; capped by --max-usd)."""
+    import anthropic
+    from . import sheets as S
+    S.load_env()
+    client, con = anthropic.Anthropic(), connect()
+    if args.url:
+        rows = con.execute("SELECT * FROM articles WHERE url IN (%s)" % ",".join("?" * len(args.url)), args.url).fetchall()
+    else:
+        rows = con.execute(
+            "SELECT * FROM articles a WHERE relevant=1 AND source NOT LIKE 'GN%' AND source != 'Hacker News'"
+            " AND NOT EXISTS (SELECT 1 FROM sheets s WHERE s.url=a.url)"
+            " ORDER BY reliability DESC, score DESC, published DESC LIMIT 500").fetchall()
+        picked, per = [], {}
+        for r in rows:  # diversity: cap the number of sheets per source
+            if per.get(r["source"], 0) < args.per_source:
+                picked.append(r)
+                per[r["source"]] = per.get(r["source"], 0) + 1
+            if len(picked) >= args.top:
+                break
+        rows = picked
+    spent = 0.0
+    for a in rows:
+        if spent >= args.max_usd:
+            print(f"budget cap reached (${spent:.3f} >= ${args.max_usd})")
+            break
+        try:
+            r = S.make_sheet(con, client, a)
+        except Exception as e:
+            print(f"[FAIL] {a['source']}: {a['title'][:60]} -> {e}", file=sys.stderr)
+            continue
+        spent += r.get("cost", 0)
+        print(f"[{r['status']:<7}] {r.get('quotes', '-'):>5} quotes  ${r.get('cost', 0):.4f}  {a['source'][:18]:<18} {a['title'][:60]}")
+    print(f"total spent this run: ${spent:.4f}")
+
+
+def cmd_render(_):
+    """Render all sheets to data/sheets.md for human review."""
+    con = connect()
+    out = ["# Source sheets (drafts to review)\n"]
+    for r in con.execute("SELECT s.*, a.title, a.source, a.source_type, a.lang, a.published FROM sheets s "
+                         "JOIN articles a USING(url) ORDER BY a.reliability DESC, a.published DESC"):
+        d = json.loads(r["sheet"])
+        out.append(f"## {r['title']}\n")
+        out.append(f"- **URL**: {r['url']}\n- **Publisher**: {r['source']} ({d['publisher']}) | **Language**: {r['lang']} | "
+                   f"**Date**: {(r['published'] or '?')[:10]}\n- **Source type**: {r['source_type']} | "
+                   f"**Reliability prior**: {d['reliability_prior']}/5 | **Review**: {r['review']}\n"
+                   f"- **Text analysed**: {r['text_kind']}{' (truncated)' if r['truncated'] else ''} | "
+                   f"**Quotes verified**: {r['quotes_ok']}/{r['quotes_total']}\n"
+                   f"- **Tags**: {', '.join(d['tags'])} | **Taxonomy**: " + " > ".join(d['taxonomy'].values()) + "\n")
+        out.append("**Summary**\n" + "\n".join(f"{i}. {l}" for i, l in enumerate(d["summary_lines"], 1)) + "\n")
+        out.append(f"**Insight**: {d['insight']}\n\n**Recommended action**: {d['recommended_action']}\n")
+        out.append("**Key claims**\n" + "\n".join(
+            f"- [{c['kind']}] {'✓' if c['quote_verified'] else '✗ QUOTE NOT FOUND'} {c['claim']}\n  > {c['evidence_quote']}"
+            for c in d["key_claims"]) + "\n")
+        if d["cve_ids"]:
+            out.append(f"**CVE**: verified {d['cve_ids_verified']} | rejected {d['cve_ids_rejected']}\n")
+        out.append(f"**Reliability notes**: {d['reliability_notes']}\n\n---\n")
+    path = JSONL.parent / "sheets.md"
+    path.write_text("\n".join(out))
+    print(f"rendered -> {path}")
+
+
+def cmd_review(args):
+    con = connect()
+    n = con.execute("UPDATE sheets SET review=? WHERE url LIKE ?", (args.status, args.url + "%")).rowcount
+    con.execute("UPDATE prompt_log SET human_validation=? WHERE prompt_ref LIKE ?",
+                (f"human review: {args.status}", f"%{args.url}%"))
+    con.commit()
+    print(f"{n} sheet(s) set to {args.status}")
 
 
 def main():
@@ -132,6 +216,10 @@ def main():
     s.add_parser("rescore").set_defaults(f=cmd_rescore)
     s.add_parser("stats").set_defaults(f=cmd_stats)
     s.add_parser("export").set_defaults(f=cmd_export)
+    sh = s.add_parser("sheet"); sh.add_argument("--top", type=int, default=5); sh.add_argument("--max-usd", type=float, default=1.0)
+    sh.add_argument("--url", nargs="*"); sh.add_argument("--per-source", type=int, default=3); sh.set_defaults(f=cmd_sheet)
+    s.add_parser("render").set_defaults(f=cmd_render)
+    rv = s.add_parser("review"); rv.add_argument("url"); rv.add_argument("status", choices=["approved", "rejected", "draft"]); rv.set_defaults(f=cmd_review)
     s.add_parser("import").set_defaults(f=cmd_import)
     t = s.add_parser("top"); t.add_argument("-n", type=int, default=20); t.set_defaults(f=cmd_top)
     a = p.parse_args()
