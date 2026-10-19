@@ -90,3 +90,21 @@ def ghsa(meta: dict, terms: list[str]) -> list[dict]:
             out.append(item(a["html_url"], f"{a['ghsa_id']}: {a['summary']}", a.get("published_at"),
                             a.get("description"), meta))
     return out
+
+
+def gnews(meta: dict, queries: list[str]) -> list[dict]:
+    """Google News RSS (French edition). Links are Google redirects: usable for discovery and dedup,
+    the real publisher is appended to the title ("... - Publisher")."""
+    from urllib.parse import quote
+    out = []
+    for q in queries:
+        url = f"https://news.google.com/rss/search?q={quote(q)}&hl=fr&gl=FR&ceid=FR:fr"
+        r = requests.get(url, timeout=30, headers=UA)
+        r.raise_for_status()
+        for e in feedparser.parse(r.content).entries:
+            pub = (e.get("source") or {}).get("title") or ""
+            title = e.get("title", "")
+            m = {**meta, "name": f"GN · {pub}" if pub else meta["name"]}
+            out.append(item(e.link, title, iso(e.get("published_parsed")), e.get("summary") or title, m))
+        time.sleep(2)
+    return out

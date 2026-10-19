@@ -20,6 +20,11 @@ ai_tooling:
   - "model context protocol"
   - "llm"
   - "vibe coding"
+  - "ia générative"
+  - "intelligence artificielle"
+  - "assistant de codage"
+  - "agents? autonomes?"
+  - "code généré"
 risk:
   - "prompt injection"
   - "injection de prompt"
@@ -46,10 +51,23 @@ risk:
   - "confused deputy"
   - "privilege escalation"
   - "owasp"
+  - "failles?"
+  - "compromission"
+  - "détournement"
+  - "piratage"
+  - "attaque"
 
 # Queries sent to APIs that support search
 api_queries:
   nvd:   ["model context protocol", "MCP server", "prompt injection", "GitHub Copilot", "Cursor IDE", "Claude Code", "AI coding agent"]
   arxiv: ["\"coding agent\" AND security", "\"model context protocol\"", "\"prompt injection\" AND agent", "\"code generation\" AND \"supply chain\" AND LLM"]
+  gnews:
+    - "\"injection de prompt\" when:30d"
+    - "agent IA sécurité vulnérabilité when:30d"
+    - "MCP \"Model Context Protocol\" sécurité when:30d"
+    - "assistant de code IA sécurité Copilot Cursor when:30d"
+    - "ANSSI \"IA générative\" recommandations sécurité when:90d"
+    - "site:cyber.gouv.fr IA générative when:90d"
+    - "IA code malveillant chaîne d'approvisionnement npm when:30d"
   hn:    ["prompt injection", "MCP security", "coding agent security", "slopsquatting"]
   ghsa_filter: ["mcp", "model context protocol", "copilot", "cursor", "claude", "langchain", "llm", "agent"]

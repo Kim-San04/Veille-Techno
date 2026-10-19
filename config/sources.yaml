@@ -16,10 +16,22 @@ rss:
   - {name: "BleepingComputer",   url: "https://www.bleepingcomputer.com/feed/",                             lang: en, type: tertiary,  reliability: 3}
   - {name: "LeMagIT",            url: "https://www.lemagit.fr/rss/ContentSyndication.xml",                  lang: fr, type: tertiary,  reliability: 3}
   - {name: "Zataz",              url: "https://www.zataz.com/feed/",                                        lang: fr, type: tertiary,  reliability: 2}
+  # --- French-language sources
+  - {name: "CERT-FR CTI",        url: "https://www.cert.ssi.gouv.fr/cti/feed/",                             lang: fr, type: primary,   reliability: 5}
+  - {name: "CNIL",               url: "https://www.cnil.fr/fr/rss.xml",                                     lang: fr, type: primary,   reliability: 5}
+  - {name: "Next.ink",           url: "https://next.ink/feed/",                                             lang: fr, type: tertiary,  reliability: 3}
+  - {name: "Silicon.fr",         url: "https://www.silicon.fr/feed",                                        lang: fr, type: tertiary,  reliability: 3}
+  - {name: "Le Monde Informatique", url: "https://www.lemondeinformatique.fr/flux-rss/thematique/securite/rss.xml", lang: fr, type: tertiary, reliability: 3}
+  - {name: "ZDNet FR",           url: "https://www.zdnet.fr/feeds/rss/actualites/",                         lang: fr, type: tertiary,  reliability: 3}
+  - {name: "Developpez.com",     url: "https://www.developpez.com/index/rss",                               lang: fr, type: tertiary,  reliability: 2}
+  - {name: "LinuxFr",            url: "https://linuxfr.org/news.atom",                                      lang: fr, type: tertiary,  reliability: 3}
+  - {name: "Numerama",           url: "https://www.numerama.com/feed/",                                     lang: fr, type: tertiary,  reliability: 3}
+  - {name: "Korben",             url: "https://korben.info/feed",                                           lang: fr, type: tertiary,  reliability: 2}
 
 # Queried by keyword (see keywords.yaml: api_queries)
 apis:
   arxiv:   {name: "arXiv cs.CR",       lang: en, type: primary,  reliability: 3}   # preprints: not peer reviewed
   nvd:     {name: "NVD (CVE)",         lang: en, type: primary,  reliability: 5}
   ghsa:    {name: "GitHub Advisories", lang: en, type: primary,  reliability: 5}
+  gnews:   {name: "Google Actualités FR", lang: fr, type: tertiary, reliability: 2}   # discovery; real publisher kept in title
   hn:      {name: "Hacker News",       lang: en, type: tertiary, reliability: 1}   # discovery only, never cited alone

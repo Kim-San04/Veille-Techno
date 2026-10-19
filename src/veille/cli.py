@@ -23,6 +23,8 @@ def store(con, matrix, items, collector):
     inserted = 0
     for it in items:
         score, matched, relevant = matrix.score(it["title"], it["summary"])
+        if it["source"].startswith("GN") and score > 0:
+            relevant = True  # Google News results are already topic-filtered by the search query; titles are short
         cur = con.execute(
             "INSERT OR IGNORE INTO articles(url,title,source,source_type,reliability,lang,published,fetched_at,summary,score,matched,relevant)"
             " VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -44,6 +46,7 @@ def cmd_collect(args):
     a = sources["apis"]
     jobs += [("nvd", lambda: C.nvd(a["nvd"], q["nvd"], since)),
              ("arxiv", lambda: C.arxiv(a["arxiv"], q["arxiv"])),
+             ("gnews", lambda: C.gnews(a["gnews"], q["gnews"])),
              ("hn", lambda: C.hn(a["hn"], q["hn"], since)),
              ("ghsa", lambda: C.ghsa(a["ghsa"], q["ghsa_filter"]))]
     if args.only:
@@ -65,8 +68,10 @@ def cmd_rescore(_):
     _, kw = load()
     matrix = Matrix.from_config(kw)
     con = connect()
-    for r in con.execute("SELECT id,title,summary FROM articles").fetchall():
+    for r in con.execute("SELECT id,title,summary,source FROM articles").fetchall():
         s, m, rel = matrix.score(r["title"], r["summary"])
+        if r["source"].startswith("GN") and s > 0:
+            rel = True
         con.execute("UPDATE articles SET score=?, matched=?, relevant=? WHERE id=?", (s, m, int(rel), r["id"]))
     con.commit()
     print("rescored")

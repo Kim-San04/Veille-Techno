@@ -10,7 +10,7 @@ class Matrix:
     @classmethod
     def from_config(cls, cfg: dict) -> "Matrix":
         def comp(terms):
-            return [re.compile(rf"(?<!\w){t}(?!\w)", re.I) if re.search(r"[\\\[\]]", t)
+            return [re.compile(rf"(?<!\w){t}(?!\w)", re.I) if re.search(r"[\\\[\]?+*]", t)
                     else re.compile(rf"(?<!\w){re.escape(t)}(?!\w)", re.I) for t in terms]
         return cls(comp(cfg["ai_tooling"]), comp(cfg["risk"]))
 
