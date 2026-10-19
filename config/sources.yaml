@@ -1,7 +1,7 @@
 # type: primary (institutional / vendor advisory / spec / paper), secondary (expert blog, vendor research), tertiary (news / social)
 # reliability: 1 (low) .. 5 (high) — a rule-based prior, adjusted by hand when a source sheet is reviewed.
 rss:
-  - {name: "CERT-FR",            url: "https://www.cert.ssi.gouv.fr/feed/",                                 lang: fr, type: primary,   reliability: 5}
+  - {name: "CERT-FR",            url: "https://cert.cyber.gouv.fr/feed/",                                 lang: fr, type: primary,   reliability: 5}
   - {name: "CISA advisories",    url: "https://www.cisa.gov/cybersecurity-advisories/all.xml",              lang: en, type: primary,   reliability: 5}
   - {name: "NCSC UK",            url: "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml",         lang: en, type: primary,   reliability: 5}
   - {name: "OWASP GenAI",        url: "https://genai.owasp.org/feed/",                                      lang: en, type: primary,   reliability: 4}
@@ -17,7 +17,7 @@ rss:
   - {name: "LeMagIT",            url: "https://www.lemagit.fr/rss/ContentSyndication.xml",                  lang: fr, type: tertiary,  reliability: 3}
   - {name: "Zataz",              url: "https://www.zataz.com/feed/",                                        lang: fr, type: tertiary,  reliability: 2}
   # --- French-language sources
-  - {name: "CERT-FR CTI",        url: "https://www.cert.ssi.gouv.fr/cti/feed/",                             lang: fr, type: primary,   reliability: 5}
+  - {name: "CERT-FR CTI",        url: "https://cert.cyber.gouv.fr/cti/feed/",                             lang: fr, type: primary,   reliability: 5}
   - {name: "CNIL",               url: "https://www.cnil.fr/fr/rss.xml",                                     lang: fr, type: primary,   reliability: 5}
   - {name: "Next.ink",           url: "https://next.ink/feed/",                                             lang: fr, type: tertiary,  reliability: 3}
   - {name: "Silicon.fr",         url: "https://www.silicon.fr/feed",                                        lang: fr, type: tertiary,  reliability: 3}

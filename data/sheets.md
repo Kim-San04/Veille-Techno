@@ -187,6 +187,45 @@
 
 ---
 
+## Vulnérabilités et risques des produits d'automatisation par IA agentique sur les postes de travail (CERTFR-2026-ACT-016)
+
+- **URL**: https://cert.cyber.gouv.fr/actualite/CERTFR-2026-ACT-016/
+- **Publisher**: cert.cyber.gouv.fr (CERT-FR (cert.cyber.gouv.fr)) | **Language**: fr | **Date**: 2026-04-13
+- **Source type**: primary | **Reliability prior**: 5/5 | **Review**: draft
+- **Text analysed**: full_text | **Quotes verified**: 7/7
+- **Tags**: agentic AI, prompt injection, OpenClaw, Claude Cowork, sandboxing, shadow IT, plugins, least privilege, CERT-FR, workstation security | **Taxonomy**: Agentic AI security > Workstation risk and hardening of autonomous assistants > Autonomous AI assistants (OpenClaw, Claude Cowork) > Governance and hardening of agent deployments on user workstations > emerging
+
+**Summary**
+1. Autonomous AI assistants (OpenClaw, Claude Cowork, open-source tools) are seeing strong adoption in 2026.
+2. They can run commands, control the browser, read/write files, manage calendars and send emails, triggered via messaging apps.
+3. Plugins may run as trusted code with application privileges, widening the software supply chain and attack surface.
+4. CERT-FR says tools like OpenClaw must not be deployed on workstations (or mobiles) until proven secure.
+5. Mitigations: sandboxing, least privilege, mandatory human validation, allowlists, IT/CISO approval, isolated test use only.
+
+**Insight**: Coding agents share the same risk profile described here: OS-level tool execution, plugin/extension trust, and prompt injection that bypasses defensive prompting. A development team should treat agent permissions, extensions and messaging channels as security-critical configuration and not rely on prompt wording for protection.
+
+**Recommended action**: Inventory agentic tools in use on developer workstations; block unvalidated ones; restrict approved agents to sandboxed environments without secrets or production data; enforce least-privilege tool access, mandatory human approval for system commands and side-effect actions, and allowlisted channels/users; review plugin/extension provenance.
+
+**Key claims**
+- [fact] ✓ Autonomous assistants can execute commands, control the browser, handle files, calendar and email, triggered by messages from varied apps.
+  > Ils peuvent exécuter des commandes, contrôler le navigateur, lire et écrire des fichiers, gérer le calendrier et envoyer des courriels
+- [analysis] ✓ Dynamically loaded plugins may run as trusted code with the application's privileges, enlarging the attack surface and making security hard to control.
+  > des greffons (plugins) peuvent être chargés dynamiquement et selon le modèle d’intégration, exécutés comme du code de confiance, avec les mêmes privilèges que ceux de l’application
+- [recommendation] ✓ CERT-FR advises that assistants such as OpenClaw should not be deployed on workstations and their use should be prohibited until security is proven.
+  > les assistants personnels autonomes tels qu’OpenClaw ne doivent pas être déployés sur des postes de travail et leur usage doit être proscrit
+- [analysis] ✓ Agentic AI applications have intrinsic weaknesses due to LLM vulnerability to prompt injection.
+  > les applications d’IA agentiques comportent des faiblesses intrinsèques résultant de la vulnérabilité des LLM aux injections de prompt
+- [analysis] ✓ Defensive prompt wording can reduce risk but can be bypassed by injection; hardening configuration is the main lever.
+  > si la formulation défensive des prompts peut contribuer à réduire les risques, elle peut être contournée via des attaques par injection
+- [recommendation] ✓ Agent tools should be limited, human validation mandatory for system commands or side-effect actions, execution sandboxed, and channels allowlisted.
+  > une validation humaine doit être obligatoire dès qu’une commande système ou une action à effet de bord est envisagée ; l’exécution doit se faire dans un environnement isolé (sandbox)
+- [hypothesis] ✓ Explicit authorization rules carry residual risk since the agent could autonomously extend its capabilities and bypass them.
+  > l’agent IA pourrait étendre ses capacités de manière autonome, en contournant les règles d’autorisation initiales.
+
+**Reliability notes**: Primary source: a national CERT (French government) bulletin, with no apparent commercial conflict of interest. Author not stated. It is a high-level advisory with no technical detail, no CVEs, no reproducible evidence, and no quantified data; claims about beta status and risk are asserted without proof. Supporting evidence is only linked (vendor and security-firm blogs, including Palo Alto and Cisco), not summarized. Scope is workstation personal assistants, not coding agents or MCP specifically, so applicability to coding agents is by analogy. Version history mentioned but not included in the text supplied.
+
+---
+
 ## CVE-2025-66416: The MCP Python SDK, called `mcp` on PyPI, is a Python implementation of the Model Context Protocol (MCP). Prior to versi
 
 - **URL**: https://nvd.nist.gov/vuln/detail/CVE-2025-66416
@@ -223,6 +262,41 @@
 **CVE**: verified ['CVE-2025-66416'] | rejected []
 
 **Reliability notes**: Primary source (NVD record), but the text is a stored summary of the vendor-supplied description; it contains a typo ('tThe'). No CVSS score, proof of concept, exploitation evidence or technical detail of the fix is stated. The 'limited circumstances' wording suggests narrow exposure, but real-world prevalence of affected configurations is not stated.
+
+---
+
+## IA : la CNIL finalise ses recommandations sur le développement des systèmes d’IA et annonce ses futurs travaux
+
+- **URL**: https://www.cnil.fr/fr/ia-finalisation-recommandations-developpement-des-systemes-ia
+- **Publisher**: cnil.fr (CNIL (Commission nationale de l'informatique et des libertés)) | **Language**: fr | **Date**: 2025-07-22
+- **Source type**: primary | **Reliability prior**: 5/5 | **Review**: draft
+- **Text analysed**: full_text | **Quotes verified**: 5/5
+- **Tags**: CNIL, GDPR, AI regulation, secure AI development, PANAME, open source, training data annotation, France | **Taxonomy**: Regulation and compliance > Data protection guidance for AI development > AI models and systems (general) > GDPR compliance and secure development of AI systems > established
+
+**Summary**
+1. CNIL publishes its last AI guidance sheets: GDPR applicability to models, security of AI development, and annotation of training data.
+2. The sheets build on a December 2024 EDPB opinion that GDPR often applies to AI models trained on personal data.
+3. A practical sheet covers risks and measures for secure AI system development, but its content is not detailed in this announcement.
+4. Further work planned: sectoral guidance (education, health, work) and H2 2025 guidance on value-chain responsibilities, including open source.
+5. Tooling: the PANAME project with ANSSI, iPoP and PEReN is building a software library to assess whether a model processes personal data.
+
+**Insight**: Teams using AI coding agents that train, fine-tune or integrate models on data containing personal information should expect GDPR obligations and regulator expectations on secure development. The announcement is high-level and contains no agent- or MCP-specific guidance, but it signals upcoming rules on value-chain roles (integrators, re-users, open source) and a forthcoming audit tool.
+
+**Recommended action**: Retrieve the full CNIL sheet on securing AI system development and the GDPR-applicability sheet, map their measures to the team's development environment and agent workflows, and monitor the H2 2025 value-chain recommendations and the PANAME library.
+
+**Key claims**
+- [fact] ✓ The EDPB opinion of December 2024 states that GDPR applies in many cases to AI models trained on personal data.
+  > le RGPD s’applique, dans de nombreux cas, aux modèles d’IA entraînés sur des données personnelles
+- [fact] ✓ CNIL provides a practical sheet detailing risks and measures for developing AI systems in a secure environment.
+  > La CNIL détaille les risques et mesures à prendre en compte lors du développement d’un système d’IA pour permettre le développement de systèmes d’IA dans un environnement sécurisé.
+- [recommendation] ✓ CNIL proposes concrete solutions such as robust filters at the level of the system wrapping the model.
+  > telles que la mise en place de filtres robustes au niveau du système encapsulant le modèle
+- [fact] ✓ CNIL will publish recommendations in H2 2025 on GDPR responsibilities of AI value-chain actors, including open source.
+  > Au second semestre 2025, la CNIL publiera de nouvelles recommandations pour éclairer les acteurs de la chaîne de création d’un système d’IA
+- [fact] ✓ The PANAME project aims to deliver a software library to assess whether a model processes personal data.
+  > Ce projet vise à développer une bibliothèque logicielle destinée à évaluer si un modèle traite ou non des données personnelles.
+
+**Reliability notes**: Primary source from the French data protection authority, so authoritative on its own positions. It is a press-style announcement, not the guidance itself: technical security measures are not listed, and some text appears truncated (missing words, absent links). No author is named. It contains no coverage of coding agents or MCP, so relevance to them is indirect. Forward-looking statements are plans and may change.
 
 ---
 

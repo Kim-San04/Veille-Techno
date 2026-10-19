@@ -97,7 +97,7 @@ def fetch_text(article) -> tuple[str, str]:
     try:
         r = requests.get(article["url"], timeout=30, headers={"User-Agent": "Mozilla/5.0 veille-bot"})
         r.raise_for_status()
-        text = trafilatura.extract(r.text, include_comments=False, include_tables=True) or ""
+        text = trafilatura.extract(r.content, include_comments=False, include_tables=True) or ""
         if len(text) >= 600:
             return text, "full_text"
     except Exception:
