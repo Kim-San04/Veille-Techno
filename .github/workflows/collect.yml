@@ -23,10 +23,8 @@ jobs:
       - run: uv run veille import
       - run: uv run veille collect --days 2
       - run: uv run veille export
-      - name: Commit new data
+      - name: Commit and push new data (safe against concurrent pushes)
         run: |
           git config user.name "veille-bot"
           git config user.email "veille-bot@users.noreply.github.com"
-          git add data/relevant.jsonl
-          git diff --cached --quiet || git commit -m "data: update relevant articles ($(date -u +%F\ %H:%M))"
-          git push
+          bash scripts/push_data.sh
