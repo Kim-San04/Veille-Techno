@@ -2,6 +2,10 @@
 # Required CI/CD variable (Settings > CI/CD > Variables, masked): PUSH_TOKEN = project access token with write_repository.
 collect:
   image: python:3.13-slim
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+    PIP_ROOT_USER_ACTION: ignore
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
   timeout: 20 minutes
   resource_group: collect          # never two collections at once
   rules:
