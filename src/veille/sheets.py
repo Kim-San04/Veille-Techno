@@ -94,6 +94,8 @@ def norm(t: str) -> str:
 
 def fetch_text(article) -> tuple[str, str]:
     """Return (text, kind). Falls back to the stored summary when the page cannot be extracted."""
+    if article["matched"] == "manual-file":  # text supplied by the user from a downloaded document
+        return article["summary"] or "", "supplied_document"
     try:
         r = requests.get(article["url"], timeout=30, headers={"User-Agent": "Mozilla/5.0 veille-bot"})
         r.raise_for_status()

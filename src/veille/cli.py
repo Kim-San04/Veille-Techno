@@ -68,7 +68,7 @@ def cmd_rescore(_):
     _, kw = load()
     matrix = Matrix.from_config(kw)
     con = connect()
-    for r in con.execute("SELECT id,title,summary,source FROM articles").fetchall():
+    for r in con.execute("SELECT id,title,summary,source FROM articles WHERE matched NOT LIKE 'manual%' OR matched IS NULL").fetchall():
         s, m, rel = matrix.score(r["title"], r["summary"])
         if r["source"].startswith("GN") and s > 0:
             rel = True
@@ -294,12 +294,22 @@ def cmd_matrix(_):
 
 def cmd_add(args):
     """Add one article by its ORIGINAL url (e.g. a French article found via a news search)."""
+    import subprocess
     import requests
     import trafilatura
     from urllib.parse import urlparse
-    r = requests.get(args.url, timeout=30, headers={"User-Agent": "Mozilla/5.0 veille-bot"})
-    r.raise_for_status()
-    meta = trafilatura.extract_metadata(r.content)  # bytes: let the parser detect the encoding
+    body, matched = "", "manual"
+    if args.file:  # document downloaded by the user (sites that block scripts): PDF or text, cited by its original URL
+        f = Path(args.file).expanduser()
+        body = (subprocess.run(["pdftotext", "-layout", str(f), "-"], capture_output=True, text=True, check=True).stdout
+                if f.suffix.lower() == ".pdf" else f.read_text())
+        matched, meta = "manual-file", None
+        if not args.title:
+            raise SystemExit("--title is required with --file")
+    else:
+        r = requests.get(args.url, timeout=30, headers={"User-Agent": "Mozilla/5.0 veille-bot"})
+        r.raise_for_status()
+        meta = trafilatura.extract_metadata(r.content)  # bytes: let the parser detect the encoding
     title = args.title or (meta.title if meta and meta.title else args.url)
     date = args.date or (meta.date if meta and meta.date else None)
     pub = f"{date}T00:00:00+00:00" if date else None
@@ -308,7 +318,7 @@ def cmd_add(args):
         "INSERT OR IGNORE INTO articles(url,title,source,source_type,reliability,lang,published,fetched_at,summary,score,matched,relevant,status)"
         " VALUES(?,?,?,?,?,?,?,?,?,?,?,1,'shortlisted')",
         (args.url, title, urlparse(args.url).netloc.removeprefix("www."), args.type, args.reliability, args.lang, pub,
-         datetime.now(timezone.utc).isoformat(), "", 0, "manual"))
+         datetime.now(timezone.utc).isoformat(), body, 0, matched))
     con.commit()
     print(("added" if cur.rowcount else "already present") + f": {title[:90]}")
 
@@ -327,7 +337,7 @@ def main():
     s.add_parser("matrix").set_defaults(f=cmd_matrix)
     ad = s.add_parser("add"); ad.add_argument("url"); ad.add_argument("--lang", default="fr")
     ad.add_argument("--type", choices=["primary", "secondary", "tertiary"], default="secondary")
-    ad.add_argument("--reliability", type=int, default=3); ad.add_argument("--title"); ad.add_argument("--date")
+    ad.add_argument("--reliability", type=int, default=3); ad.add_argument("--title"); ad.add_argument("--date"); ad.add_argument("--file")
     ad.set_defaults(f=cmd_add)
     rv = s.add_parser("review"); rv.add_argument("url"); rv.add_argument("status", choices=["approved", "rejected", "draft"]); rv.set_defaults(f=cmd_review)
     s.add_parser("import").set_defaults(f=cmd_import)
