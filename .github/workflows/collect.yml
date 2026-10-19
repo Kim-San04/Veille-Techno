@@ -3,6 +3,7 @@ name: collect
 on:
   schedule:
     - cron: "43 */3 * * *"   # every 3 hours, off-peak minute (GitHub delays or drops runs scheduled at busy times)
+    - cron: "03 14 19 10 *"  # TEST one-shot, remove after check
   workflow_dispatch: {}       # manual run from the Actions tab
 
 permissions:
