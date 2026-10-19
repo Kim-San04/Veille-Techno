@@ -173,7 +173,7 @@ def cmd_sheet(args):
     print(f"total spent this run: ${spent:.4f}")
 
 
-def cmd_render(_):
+def cmd_render(args):
     """Render all sheets to data/sheets.md for human review."""
     con = connect()
     out = ["# Source sheets (drafts to review)\n"]
@@ -195,9 +195,46 @@ def cmd_render(_):
         if d["cve_ids"]:
             out.append(f"**CVE**: verified {d['cve_ids_verified']} | rejected {d['cve_ids_rejected']}\n")
         out.append(f"**Reliability notes**: {d['reliability_notes']}\n\n---\n")
-    path = JSONL.parent / "sheets.md"
-    path.write_text("\n".join(out))
-    print(f"rendered -> {path}")
+    text = "\n".join(out)
+    if not args.fr:
+        path = JSONL.parent / "sheets.md"
+        path.write_text(text)
+        print(f"rendered -> {path}")
+        return
+    import anthropic
+    from . import sheets as S
+    S.load_env()
+    client = anthropic.Anthropic()
+    blocks = text.split("\n---\n")
+    fr, cost = [], 0.0
+    for b in blocks:
+        if not b.strip():
+            continue
+        if b.lstrip().startswith("# Source sheets"):
+            head, _, b = b.partition("\n\n")
+            fr.append("# Fiches source (brouillons à relire) — traduction française\n\n> Traduction pour lecture uniquement. "
+                      "Les citations (lignes `>`) restent dans la langue d'origine. La version de référence est sheets.md.\n")
+        r = client.messages.create(
+            model=S.MODEL, max_tokens=4000,
+            system="Translate the user's Markdown into French. Keep Markdown structure, URLs, CVE/GHSA identifiers, product names, "
+                   "code identifiers and the symbols ✓ ✗ unchanged. Do NOT translate or alter lines starting with '  >' (verbatim quotes). "
+                   "Translate field labels (Summary->Résumé, Insight->Enseignement, Recommended action->Action recommandée, "
+                   "Key claims->Affirmations clés, Reliability notes->Notes de fiabilité, Reliability prior->Fiabilité a priori, "
+                   "Source type->Type de source, Quotes verified->Citations vérifiées, Text analysed->Texte analysé). "
+                   "Return only the translated Markdown.",
+            messages=[{"role": "user", "content": b}], output_config={"effort": "low"})
+        c = r.usage.input_tokens * S.PRICE_IN + r.usage.output_tokens * S.PRICE_OUT
+        cost += c
+        con = connect()
+        con.execute("INSERT INTO prompt_log(ts,phase,objective,model,prompt_ref,input_tokens,output_tokens,cost_usd,outcome,human_validation)"
+                    " VALUES(?,?,?,?,?,?,?,?,?,?)", (datetime.now(timezone.utc).isoformat(), "reading aid",
+                    "Translate sheet to French for the author's reading", S.MODEL, "translate-fr-v1", r.usage.input_tokens,
+                    r.usage.output_tokens, c, r.stop_reason, "reading aid only, not used in the report"))
+        con.commit()
+        fr.append(next(x.text for x in r.content if x.type == "text").strip() + "\n\n---\n")
+    path = JSONL.parent / "sheets.fr.md"
+    path.write_text("\n".join(fr))
+    print(f"rendered -> {path} (${cost:.3f})")
 
 
 def cmd_review(args):
@@ -218,7 +255,7 @@ def main():
     s.add_parser("export").set_defaults(f=cmd_export)
     sh = s.add_parser("sheet"); sh.add_argument("--top", type=int, default=5); sh.add_argument("--max-usd", type=float, default=1.0)
     sh.add_argument("--url", nargs="*"); sh.add_argument("--per-source", type=int, default=3); sh.set_defaults(f=cmd_sheet)
-    s.add_parser("render").set_defaults(f=cmd_render)
+    rd = s.add_parser("render"); rd.add_argument("--fr", action="store_true"); rd.set_defaults(f=cmd_render)
     rv = s.add_parser("review"); rv.add_argument("url"); rv.add_argument("status", choices=["approved", "rejected", "draft"]); rv.set_defaults(f=cmd_review)
     s.add_parser("import").set_defaults(f=cmd_import)
     t = s.add_parser("top"); t.add_argument("-n", type=int, default=20); t.set_defaults(f=cmd_top)
