@@ -39,6 +39,7 @@ SCHEMA = {
     "properties": {
         "title_en": {"type": "string"},
         "publisher": {"type": "string"},
+        "author": {"type": "string", "description": "person or organisation credited as author in the document, or 'not stated'"},
         "summary_lines": {"type": "array", "items": {"type": "string"}, "description": "exactly 5 short lines"},
         "insight": {"type": "string", "description": "why this matters for a development team using AI coding agents"},
         "recommended_action": {"type": "string"},
@@ -69,7 +70,7 @@ SCHEMA = {
         "cve_ids": {"type": "array", "items": {"type": "string"}},
         "reliability_notes": {"type": "string"},
     },
-    "required": ["title_en", "publisher", "summary_lines", "insight", "recommended_action", "tags", "taxonomy",
+    "required": ["title_en", "publisher", "author", "summary_lines", "insight", "recommended_action", "tags", "taxonomy",
                  "key_claims", "cve_ids", "reliability_notes"],
     "additionalProperties": False,
 }

@@ -240,10 +240,78 @@ def cmd_render(args):
 def cmd_review(args):
     con = connect()
     n = con.execute("UPDATE sheets SET review=? WHERE url LIKE ?", (args.status, args.url + "%")).rowcount
+    if args.status == "approved":  # give each approved sheet a stable citation key, never reused
+        for r in con.execute("SELECT url FROM sheets WHERE review='approved' AND ref IS NULL AND url LIKE ? ORDER BY created_at",
+                             (args.url + "%",)).fetchall():
+            nxt = (con.execute("SELECT COUNT(ref) FROM sheets").fetchone()[0]) + 1
+            con.execute("UPDATE sheets SET ref=? WHERE url=?", (f"S{nxt:02d}", r["url"]))
     con.execute("UPDATE prompt_log SET human_validation=? WHERE prompt_ref LIKE ?",
                 (f"human review: {args.status}", f"%{args.url}%"))
     con.commit()
     print(f"{n} sheet(s) set to {args.status}")
+
+
+def _approved(con):
+    return con.execute("SELECT s.*, a.title, a.source, a.source_type, a.lang, a.published, a.reliability FROM sheets s "
+                       "JOIN articles a USING(url) WHERE s.review='approved' ORDER BY s.ref").fetchall()
+
+
+def cmd_bib(_):
+    """Bibliography of APPROVED sheets only: author/organisation, title, date, link, consultation date."""
+    con = connect()
+    lines = ["# References\n"]
+    for r in _approved(con):
+        d = json.loads(r["sheet"])
+        author = d.get("author", "not stated")
+        has_author = author.lower() != "not stated" and author.lower() != d["publisher"].lower()
+        who = f"{author}. " if has_author else ""
+        lines.append(f"- **[{r['ref']}]** {who}*{d['title_en']}*. {d['publisher']}, "
+                     f"{(r['published'] or 'n.d.')[:10]}. <{r['url']}> (accessed {r['created_at'][:10]}). [{r['lang'].upper()}]")
+    path = JSONL.parent / "bibliography.md"
+    path.write_text("\n".join(lines) + "\n")
+    print(f"{len(lines) - 1} references -> {path}")
+
+
+def cmd_matrix(_):
+    """Evidence grid of APPROVED sheets grouped by theme: the raw material of the source confrontation."""
+    con = connect()
+    themes = {}
+    for r in _approved(con):
+        d = json.loads(r["sheet"])
+        themes.setdefault(d["taxonomy"]["theme"], []).append((r, d))
+    out = ["# Evidence matrix (approved sheets, grouped by theme)\n"]
+    for theme, items in sorted(themes.items()):
+        out.append(f"## {theme}\n\n| Ref | Source | Type | Lang | Rel. | Date | Claims (kind) |\n|---|---|---|---|---|---|---|")
+        for r, d in items:
+            claims = "<br>".join(f"({c['kind'][0].upper()}) {c['claim']}" for c in d["key_claims"] if c["quote_verified"])
+            out.append(f"| {r['ref']} | {r['source']} | {r['source_type']} | {r['lang']} | {r['reliability']} | "
+                       f"{(r['published'] or '?')[:10]} | {claims} |")
+        out.append("")
+    path = JSONL.parent / "matrix.md"
+    path.write_text("\n".join(out))
+    print(f"{sum(len(v) for v in themes.values())} sheets in {len(themes)} themes -> {path}")
+
+
+def cmd_add(args):
+    """Add one article by its ORIGINAL url (e.g. a French article found via a news search)."""
+    import requests
+    import trafilatura
+    from urllib.parse import urlparse
+    r = requests.get(args.url, timeout=30, headers={"User-Agent": "Mozilla/5.0 veille-bot"})
+    r.raise_for_status()
+    meta = trafilatura.extract_metadata(r.text)
+    title = (meta.title if meta and meta.title else args.url)
+    pub = None
+    if meta and meta.date:
+        pub = f"{meta.date}T00:00:00+00:00"
+    con = connect()
+    cur = con.execute(
+        "INSERT OR IGNORE INTO articles(url,title,source,source_type,reliability,lang,published,fetched_at,summary,score,matched,relevant,status)"
+        " VALUES(?,?,?,?,?,?,?,?,?,?,?,1,'shortlisted')",
+        (args.url, title, urlparse(args.url).netloc.removeprefix("www."), args.type, args.reliability, args.lang, pub,
+         datetime.now(timezone.utc).isoformat(), "", 0, "manual"))
+    con.commit()
+    print(("added" if cur.rowcount else "already present") + f": {title[:90]}")
 
 
 def main():
@@ -256,6 +324,11 @@ def main():
     sh = s.add_parser("sheet"); sh.add_argument("--top", type=int, default=5); sh.add_argument("--max-usd", type=float, default=1.0)
     sh.add_argument("--url", nargs="*"); sh.add_argument("--per-source", type=int, default=3); sh.set_defaults(f=cmd_sheet)
     rd = s.add_parser("render"); rd.add_argument("--fr", action="store_true"); rd.set_defaults(f=cmd_render)
+    s.add_parser("bib").set_defaults(f=cmd_bib)
+    s.add_parser("matrix").set_defaults(f=cmd_matrix)
+    ad = s.add_parser("add"); ad.add_argument("url"); ad.add_argument("--lang", default="fr")
+    ad.add_argument("--type", choices=["primary", "secondary", "tertiary"], default="secondary")
+    ad.add_argument("--reliability", type=int, default=3); ad.set_defaults(f=cmd_add)
     rv = s.add_parser("review"); rv.add_argument("url"); rv.add_argument("status", choices=["approved", "rejected", "draft"]); rv.set_defaults(f=cmd_review)
     s.add_parser("import").set_defaults(f=cmd_import)
     t = s.add_parser("top"); t.add_argument("-n", type=int, default=20); t.set_defaults(f=cmd_top)

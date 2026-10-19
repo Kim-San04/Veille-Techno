@@ -48,4 +48,8 @@ def connect(path: Path = DB_PATH) -> sqlite3.Connection:
     con = sqlite3.connect(path)
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
+    cols = {r["name"] for r in con.execute("PRAGMA table_info(sheets)")}
+    if "ref" not in cols:  # stable citation key (S01, S02...) assigned when a sheet is approved
+        con.execute("ALTER TABLE sheets ADD COLUMN ref TEXT")
+        con.commit()
     return con
