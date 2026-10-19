@@ -1,0 +1,23 @@
+# Scheduled collection (GitLab CI). Runs only from a pipeline schedule or a manual "Run pipeline".
+# Required CI/CD variable (Settings > CI/CD > Variables, masked): PUSH_TOKEN = project access token with write_repository.
+collect:
+  image: python:3.13-slim
+  timeout: 20 minutes
+  resource_group: collect          # never two collections at once
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends git ca-certificates >/dev/null
+    - pip install -q uv
+    - git config user.name "veille-bot"
+    - git config user.email "veille-bot@users.noreply.gitlab.com"
+    - git remote set-url origin "https://oauth2:${PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    - git fetch -q origin main
+    - git checkout -q -B main origin/main
+  script:
+    - uv sync
+    - uv run veille import
+    - uv run veille collect --days 2
+    - uv run veille export
+    - bash scripts/push_data.sh
