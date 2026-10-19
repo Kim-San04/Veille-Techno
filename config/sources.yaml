@@ -1,0 +1,25 @@
+# type: primary (institutional / vendor advisory / spec / paper), secondary (expert blog, vendor research), tertiary (news / social)
+# reliability: 1 (low) .. 5 (high) — a rule-based prior, adjusted by hand when a source sheet is reviewed.
+rss:
+  - {name: "CERT-FR",            url: "https://www.cert.ssi.gouv.fr/feed/",                                 lang: fr, type: primary,   reliability: 5}
+  - {name: "CISA advisories",    url: "https://www.cisa.gov/cybersecurity-advisories/all.xml",              lang: en, type: primary,   reliability: 5}
+  - {name: "NCSC UK",            url: "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml",         lang: en, type: primary,   reliability: 5}
+  - {name: "OWASP GenAI",        url: "https://genai.owasp.org/feed/",                                      lang: en, type: primary,   reliability: 4}
+  - {name: "GitHub blog security", url: "https://github.blog/security/feed/",                               lang: en, type: primary,   reliability: 4}
+  - {name: "Trail of Bits",      url: "https://blog.trailofbits.com/feed/",                                 lang: en, type: secondary, reliability: 4}
+  - {name: "Embrace The Red",    url: "https://embracethered.com/blog/index.xml",                           lang: en, type: secondary, reliability: 4}
+  - {name: "Simon Willison",     url: "https://simonwillison.net/atom/everything/",                         lang: en, type: secondary, reliability: 4}
+  - {name: "Unit 42",            url: "https://unit42.paloaltonetworks.com/feed/",                          lang: en, type: secondary, reliability: 3}
+  - {name: "Wiz",                url: "https://www.wiz.io/feed/rss.xml",                                    lang: en, type: secondary, reliability: 3}
+  - {name: "Snyk",               url: "https://snyk.io/blog/feed/",                                         lang: en, type: secondary, reliability: 3}
+  - {name: "The Hacker News",    url: "https://feeds.feedburner.com/TheHackersNews",                        lang: en, type: tertiary,  reliability: 3}
+  - {name: "BleepingComputer",   url: "https://www.bleepingcomputer.com/feed/",                             lang: en, type: tertiary,  reliability: 3}
+  - {name: "LeMagIT",            url: "https://www.lemagit.fr/rss/ContentSyndication.xml",                  lang: fr, type: tertiary,  reliability: 3}
+  - {name: "Zataz",              url: "https://www.zataz.com/feed/",                                        lang: fr, type: tertiary,  reliability: 2}
+
+# Queried by keyword (see keywords.yaml: api_queries)
+apis:
+  arxiv:   {name: "arXiv cs.CR",       lang: en, type: primary,  reliability: 3}   # preprints: not peer reviewed
+  nvd:     {name: "NVD (CVE)",         lang: en, type: primary,  reliability: 5}
+  ghsa:    {name: "GitHub Advisories", lang: en, type: primary,  reliability: 5}
+  hn:      {name: "Hacker News",       lang: en, type: tertiary, reliability: 1}   # discovery only, never cited alone

@@ -1,0 +1,32 @@
+name: collect
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 hours
+  workflow_dispatch: {}       # manual run from the Actions tab
+
+permissions:
+  contents: write             # needed to commit data/relevant.jsonl
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run veille import
+      - run: uv run veille collect --days 2
+      - run: uv run veille export
+      - name: Commit new data
+        run: |
+          git config user.name "veille-bot"
+          git config user.email "veille-bot@users.noreply.github.com"
+          git add data/relevant.jsonl
+          git diff --cached --quiet || git commit -m "data: update relevant articles ($(date -u +%F\ %H:%M))"
+          git push

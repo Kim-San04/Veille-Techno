@@ -1,0 +1,55 @@
+# Keyword matrix (FR/EN). An article is "relevant" only if it matches BOTH an AI-tooling term and a risk term.
+# Matching is case-insensitive on word boundaries; title hits weigh x3.
+ai_tooling:
+  - "coding agent"
+  - "coding assistant"
+  - "ai agent"
+  - "agentic"
+  - "agent ia"
+  - "agents ia"
+  - "assistant de code"
+  - "assistant de programmation"
+  - "github copilot"
+  - "copilot"
+  - "cursor"
+  - "claude code"
+  - "codex"
+  - "windsurf"
+  - "gemini cli"
+  - "mcp"
+  - "model context protocol"
+  - "llm"
+  - "vibe coding"
+risk:
+  - "prompt injection"
+  - "injection de prompt"
+  - "tool poisoning"
+  - "rug pull"
+  - "slopsquatting"
+  - "package hallucination"
+  - "hallucinated package"
+  - "supply chain"
+  - "chaîne d'approvisionnement"
+  - "vulnerability"
+  - "vulnérabilité"
+  - "cve-20\\d\\d-\\d+"
+  - "remote code execution"
+  - "rce"
+  - "exfiltration"
+  - "secret leak"
+  - "fuite de secrets"
+  - "jailbreak"
+  - "sandbox"
+  - "backdoor"
+  - "malicious"
+  - "malveillant"
+  - "confused deputy"
+  - "privilege escalation"
+  - "owasp"
+
+# Queries sent to APIs that support search
+api_queries:
+  nvd:   ["model context protocol", "MCP server", "prompt injection", "GitHub Copilot", "Cursor IDE", "Claude Code", "AI coding agent"]
+  arxiv: ["\"coding agent\" AND security", "\"model context protocol\"", "\"prompt injection\" AND agent", "\"code generation\" AND \"supply chain\" AND LLM"]
+  hn:    ["prompt injection", "MCP security", "coding agent security", "slopsquatting"]
+  ghsa_filter: ["mcp", "model context protocol", "copilot", "cursor", "claude", "langchain", "llm", "agent"]
