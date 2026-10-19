@@ -132,6 +132,10 @@ def cmd_import(_):
             for line in f.read_text().splitlines():
                 d = json.loads(line)
                 d.pop("id", None)
+                if name == "prompt_log" and con.execute(
+                        "SELECT 1 FROM prompt_log WHERE ts=? AND phase=? AND prompt_ref=?",
+                        (d["ts"], d["phase"], d["prompt_ref"])).fetchone():
+                    continue  # idempotent import: the log has no natural key, so match on (ts, phase, prompt_ref)
                 con.execute(f"INSERT OR IGNORE INTO {name}({','.join(d)}) VALUES({','.join('?' * len(d))})", list(d.values()))
     con.commit()
     print(f"imported {n} articles")
